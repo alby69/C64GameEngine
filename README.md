@@ -145,6 +145,25 @@ RUN
 > iniziare. In VICE ricorda di cliccare dentro la finestra dell'emulatore
 > perché la tastiera va all'emulatore solo se ha il focus.
 
+### Se il gioco non parte
+
+1. **Ricompila il `.prg`**: il file generato non è nel repository (è in
+   `.gitignore`), quindi dopo un `git pull` va rigenerato:
+
+   ```bat
+   scripts\build-game.bat
+   ```
+
+2. **In VICE**: se hai aperto il `.prg` a mano (drag & drop) senza autostart,
+   digita `RUN` (oppure `SYS 2064`) al prompt del BASIC. Con lo script
+   `scripts\run-game.bat` l'avvio è automatico.
+
+3. **Tastiera**: clicca dentro la finestra di VICE, altrimenti i tasti non
+   arrivano all'emulatore.
+
+4. **Joystick**: in VICE il pulsante Fuoco va mappato su "Joystick 1" o
+   "Joystick 2" (*Settings → Joystick*); il gioco li legge entrambi.
+
 ---
 
 ## Compilare e testare il gioco

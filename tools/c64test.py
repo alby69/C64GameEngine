@@ -46,9 +46,18 @@ class C64:
         if addr == 0xD012:               # VIC raster: il pennello avanza a ogni lettura
             self.raster = (self.raster + 1) & 0xFF
             return self.raster
-        if addr == 0xDC00:               # joystick porta 2
+        if addr == 0xDC00:               # porta A: righe tastiera / joystick 2
+            # la direzione dei pin decide cosa si leggge:
+            # in ingresso (DDR = 1) si legge il joystick, in uscita l'ultimo
+            # valore scritto. CRA bit 2 forza l'uscita.
+            ddr = self.mem[0xDC02]
+            if (self.mem[0xDC0E] & 0x04) or not (ddr & 0x01):
+                return self.mem[0xDC00]
             return self.joystick
-        if addr == 0xDC01:               # porte B: colonne tastiera + joystick 1
+        if addr == 0xDC01:               # porta B: colonne tastiera / joystick 1
+            ddr = self.mem[0xDC03]
+            if (self.mem[0xDC0F] & 0x04) or not (ddr & 0x01):
+                return self.mem[0xDC01]
             val = 0xFF
             if self.kbd_key is not None:
                 row, col = self.kbd_key

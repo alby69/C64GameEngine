@@ -112,6 +112,8 @@ SID_WAVE_NOISE  = $80       ; Rumore bianco
 ; -----------------------------------------------------------------------------
 CIA1_PORT_A     = $DC00     ; Righe della matrice tastiera / joystick porta 2
 CIA1_PORT_B     = $DC01     ; Colonne della matrice tastiera / joystick porta 1
+CIA1_DDR_A      = $DC02     ; Direzione dei pin della porta A (1 = ingresso)
+CIA1_DDR_B      = $DC03     ; Direzione dei pin della porta B (1 = ingresso)
 CIA1_TIMER_A_LO = $DC04
 CIA1_TIMER_A_HI = $DC05
 CIA1_TIMER_B_LO = $DC06

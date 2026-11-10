@@ -100,6 +100,16 @@ Il codice originale **non compilava** con ACME 0.96:
    ogni colonna: una sola = tasto reale, più di una = pulsante del joystick, e
    la colonna viene ignorata. In questo modo joystick e tastiera non si
    confondono.
+8. **Registri di direzione dei pin della CIA 1 ($DC02, $DC03) ignorati** —
+   sulla 6526 un bit a 1 nel registro di direzione significa *ingresso* (non
+   uscita, come sul PIA del 6510). Senza impostarli, dopo una scansione della
+   tastiera la lettura del joystick restituiva l'ultima riga pilotata invece
+   dello stato dei pulsanti: il gioco non rispondeva a nessun comando.
+9. **L'interrupt della CIA 1 non disattivato** — il KERNAL continua a
+   scansionare la tastiera nella sua routine di interrupt e a scrivere sulla
+   porta A: i suoi accessi si scontravano con quelli del gioco. Ora
+   `input_init` disattiva l'interrupt della CIA 1 e la tastiera è gestita solo
+   dal gioco.
 
 ---
 

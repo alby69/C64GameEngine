@@ -52,12 +52,27 @@ input_init:
     sta ZP_DELAY
     lda #%00011111
     sta INPUT_JOY1          ; nessun pulsante del joystick in porta 1
+
+    ; ---------------------------------------------------------------------------
+    ; IMPORTANTE: si disattiva l'interrupt della CIA 1.
+    ; Se il KERNAL resta in ascolto, la sua routine di interrupt scansiona la
+    ; tastiera ogni frame e scrive sulla porta A: i suoi accessi si
+    ; scontrerebbero con la scansione del gioco (e con la lettura del
+    ; joystick). Da qui in poi la tastiera e' gestita solo dal gioco.
+    ; ---------------------------------------------------------------------------
+    lda #$00
+    sta CIA1_ICR
     rts
 
 ; -----------------------------------------------------------------------------
 ; input_read_joy - A = porta (0 = porta 1, 1 = porta 2)
 ; Restituisce in A lo stato grezzo dei tasti (logica invertita: 0 = premuto)
 ; e lo memorizza in INPUT_JOY.
+;
+; I registri di direzione dei pin ($DC02, $DC03) vengono impostati
+; esplicitamente: e' la direzione dei pin a decidere se la lettura restituisce
+; il joystick oppure l'ultimo valore scritto sulla porta (che accade quando la
+; tastiera e' stata interrogata poco prima).
 ; -----------------------------------------------------------------------------
 input_read_joy:
     cmp #$01
@@ -65,8 +80,10 @@ input_read_joy:
 
     ; Porta 1: i tasti sono sulla porta B ($DC01)
     lda CIA1_CRB
-    and #%11111011          ; bit 2 = 0 -> porta in ingresso
+    and #%11111011          ; bit 2 = 0 -> si usa il registro di direzione
     sta CIA1_CRB
+    lda #$FF
+    sta CIA1_DDR_B           ; tutti i pin in ingresso (1 = ingresso)
     lda CIA1_PORT_B
     sta INPUT_JOY
     rts
@@ -74,8 +91,10 @@ input_read_joy:
 .inp_joy_port2:
     ; Porta 2: i tasti sono sulla porta A ($DC00)
     lda CIA1_CRA
-    and #%11111011          ; bit 2 = 0 -> porta in ingresso
+    and #%11111011          ; bit 2 = 0 -> si usa il registro di direzione
     sta CIA1_CRA
+    lda #$FF
+    sta CIA1_DDR_A           ; tutti i pin in ingresso (1 = ingresso)
     lda CIA1_PORT_A
     sta INPUT_JOY
     rts
@@ -183,11 +202,15 @@ input_read_kbd:
     lda CIA1_CRA
     ora #%00000100
     sta CIA1_CRA
+    lda #$00
+    sta CIA1_DDR_A           ; tutti i pin della porta A in uscita (0 = uscita)
 
     ; La porta B resta in ingresso (colonne)
     lda CIA1_CRB
     and #%11111011
     sta CIA1_CRB
+    lda #$FF
+    sta CIA1_DDR_B           ; tutti i pin della porta B in ingresso
 
     ; Azzera i contatori e le righe delle colonne
     ldx #$07
@@ -264,12 +287,15 @@ input_read_kbd:
     bne .inp_kbd_find
 
 .inp_kbd_done:
-    ; Ripristina lo stato: nessuna riga selezionata, porta A in ingresso
+    ; Ripristina lo stato: nessuna riga selezionata e porta A in ingresso,
+    ; cosi' il joystick in porta 2 resta leggibile.
     lda #$FF
     sta CIA1_PORT_A
     lda CIA1_CRA
     and #%11111011
     sta CIA1_CRA
+    lda #$FF
+    sta CIA1_DDR_A           ; la porta A torna in ingresso (joystick)
 
     lda INPUT_KEY
     rts
