@@ -1,0 +1,40 @@
+# Dependencies (installed inside the image)
+node_modules
+npm-debug.log*
+
+# Build output (rebuilt inside the image)
+dist
+build
+.vite
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Local configuration / secrets
+.env
+.env.*
+!.env.example
+
+# Tooling / OS noise
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+*.swp
+
+# Logs
+*.log
+logs
+
+# Docker files (not needed inside the image)
+docker-compose*.yml
+/Dockerfile
+/Dockerfile.dev
+.dockerignore
+
+# Docs & helper scripts
+README.md
+scripts
+docs

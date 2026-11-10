@@ -3,3 +3,19 @@ node_modules/
 dist/
 build/
 *.log
+
+# Local environment
+.env
+.env.local
+.env.*.local
+
+# Docker
+docker_data/
+
+# Assembly: file generati dalla compilazione
+*.prg
+symbols.txt
+
+# Python
+__pycache__/
+*.pyc

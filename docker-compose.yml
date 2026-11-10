@@ -1,0 +1,103 @@
+name: c64gameengine
+
+services:
+  # ------------------------------------------------------------------
+  # Production: nginx serving the compiled SPA
+  #   docker compose up -d --build            (default)
+  #   -> http://localhost:${APP_PORT:-3000}
+  # ------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    image: c64gameengine:latest
+    container_name: c64gameengine
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:80"
+    environment:
+      TZ: "${TZ:-Europe/Rome}"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/healthz >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - c64net
+
+  # ------------------------------------------------------------------
+  # Development: vite dev server with hot reload (profile: dev)
+  #   docker compose --profile dev up -d      (or scripts/start.* -Dev)
+  #   -> http://localhost:${DEV_PORT:-3001}
+  # ------------------------------------------------------------------
+  dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: c64gameengine-dev:latest
+    container_name: c64gameengine-dev
+    restart: unless-stopped
+    ports:
+      - "${DEV_PORT:-3001}:3000"
+    environment:
+      TZ: "${TZ:-Europe/Rome}"
+      # Polling is required to detect changes on Docker Desktop (Windows/macOS)
+      VITE_USE_POLLING: "true"
+      # The HMR websocket must use the port published on the host
+      VITE_HMR_PORT: "${DEV_PORT:-3001}"
+      VITE_HMR_HOST: "${HMR_HOST:-localhost}"
+      VITE_ALLOWED_HOSTS: "${ALLOWED_HOSTS:-true}"
+    volumes:
+      # Hot reload: mount the whole project (sources are updated live)
+      - ${DEV_MOUNT:-.}:/app
+      # Keep the container's own node_modules (never share the host ones)
+      - dev_node_modules:/app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ >/dev/null || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - c64net
+
+  # ------------------------------------------------------------------
+  # Assembler: compiles the 6502 games with ACME (profile: build)
+  #   docker compose --profile build run --rm assembler
+  #   -> games/space-invaders/space_invaders.prg
+  # ------------------------------------------------------------------
+  assembler:
+    profiles: ["build"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.acme
+    image: c64gameengine-acme:latest
+    container_name: c64gameengine-assembler
+    working_dir: /work
+    volumes:
+      - .:/work
+    entrypoint: ["acme"]
+    command:
+      - "-f"
+      - "cbm"
+      - "-o"
+      - "games/space-invaders/space_invaders.prg"
+      - "-l"
+      - "symbols.txt"
+      - "-I"
+      - "engine"
+      - "-I"
+      - "games/space-invaders"
+      - "games/space-invaders/si_main.asm"
+
+networks:
+  c64net:
+    name: c64gameengine_net
+    driver: bridge
+
+volumes:
+  dev_node_modules:
+    name: c64gameengine_dev_node_modules

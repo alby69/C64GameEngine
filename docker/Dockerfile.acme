@@ -1,0 +1,33 @@
+# syntax=docker/dockerfile:1
+#
+# C64 GAME ENGINE - immagine dell'assemblatore
+#
+# ACME e' il cross assembler usato dal progetto (sintassi !src / !byte / !scr).
+# L'immagine permette di compilare il gioco senza installare nulla sull'host.
+#
+#   docker build -f docker/Dockerfile.acme -t c64gameengine-acme .
+#   docker run --rm -v .:/work -w /work c64gameengine-acme -f cbm -o out.prg main.asm
+
+FROM debian:bookworm-slim
+
+ARG ACME_REPO=https://github.com/meonwax/acme.git
+ARG ACME_BRANCH=master
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+# ACME 0.96 (Fenchurch): l'ultima versione pubblica del progetto originale
+RUN git clone --depth 1 --branch "${ACME_BRANCH}" "${ACME_REPO}" /tmp/acme \
+    && cd /tmp/acme/src \
+    && make -f Makefile \
+    && install -m 0755 ./acme /usr/local/bin/acme \
+    && rm -rf /tmp/acme \
+    && acme --version
+
+WORKDIR /work
+ENTRYPOINT ["acme"]
+CMD ["--help"]
