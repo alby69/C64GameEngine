@@ -68,6 +68,11 @@ services:
   # Assembler: compiles the 6502 games with ACME (profile: build)
   #   docker compose --profile build run --rm assembler
   #   -> games/space-invaders/space_invaders.prg
+  #
+  # Any game in games/ can be compiled by setting GAME and MAIN:
+  #   GAME=hello MAIN=hello_main.asm docker compose --profile build run --rm assembler
+  #
+  # Convention: the main file of a game is the only "*_main.asm" in its folder.
   # ------------------------------------------------------------------
   assembler:
     profiles: ["build"]
@@ -79,19 +84,19 @@ services:
     working_dir: /work
     volumes:
       - .:/work
-    entrypoint: ["acme"]
-    command:
-      - "-f"
-      - "cbm"
-      - "-o"
-      - "games/space-invaders/space_invaders.prg"
-      - "-l"
-      - "symbols.txt"
-      - "-I"
-      - "engine"
-      - "-I"
-      - "games/space-invaders"
-      - "games/space-invaders/si_main.asm"
+    environment:
+      GAME: "${GAME:-space-invaders}"
+      MAIN: "${MAIN:-si_main.asm}"
+    entrypoint:
+      - sh
+      - -c
+      - |
+        GAME_FILE=$$(echo "$$GAME" | tr '-' '_')
+        exec acme -f cbm \
+          -o "games/$$GAME/$$GAME_FILE.prg" \
+          -l "games/$$GAME/$$GAME_FILE.symbols" \
+          -I engine -I "games/$$GAME" \
+          "games/$$GAME/$$MAIN"
 
 networks:
   c64net:

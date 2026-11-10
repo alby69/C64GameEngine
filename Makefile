@@ -18,7 +18,10 @@ GAME        ?= space-invaders
 GAME_DIR    := games/$(GAME)
 GAME_FILE   := $(subst -,_,$(GAME))
 TARGET      := $(GAME_DIR)/$(GAME_FILE).prg
-SYMBOLS     := symbols.txt
+# I simboli stanno accanto al gioco: ogni gioco ha i suoi
+SYMBOLS     := $(GAME_DIR)/$(GAME_FILE).symbols
+# Convenzione: il file principale e' l'unico "*_main.asm" della cartella
+MAIN        := $(notdir $(firstword $(wildcard $(GAME_DIR)/*_main.asm)))
 
 ACME        ?= acme
 PYTHON      ?= python3
@@ -40,24 +43,25 @@ all: game
 # -----------------------------------------------------------------------------
 game: $(TARGET)
 
-$(TARGET): $(GAME_DIR)/si_main.asm $(ENGINE_SRC) $(GAME_SRC)
+$(TARGET): $(GAME_DIR)/$(MAIN) $(ENGINE_SRC) $(GAME_SRC)
 	@echo "=========================================================="
 	@echo " Compilazione di $(GAME) con ACME"
 	@echo "=========================================================="
-	$(ACME) $(ACME_FLAGS) -o $@ -l $(SYMBOLS) $(INCLUDES) $<
+	$(ACME) $(ACME_FLAGS) -o $@ -l $(SYMBOLS) $(INCLUDES) $(GAME_DIR)/$(MAIN)
 	@echo " Fatto: $@"
 
 # -----------------------------------------------------------------------------
 # Test automatico (emulatore 6502 minimale incluso nel progetto)
 # -----------------------------------------------------------------------------
 test: $(TARGET)
+	@test -f $(SYMBOLS) || $(ACME) $(ACME_FLAGS) -o $(TARGET) -l $(SYMBOLS) $(INCLUDES) $(GAME_DIR)/$(MAIN)
 	$(PYTHON) tools/c64test.py $(TARGET) $(SYMBOLS)
 
 # -----------------------------------------------------------------------------
 # Stessa cosa dentro Docker: non serve installare ACME sull'host
 # -----------------------------------------------------------------------------
 docker-build:
-	$(COMPOSE) --profile build run --rm assembler
+	$(COMPOSE) --profile build run --rm -e GAME=$(GAME) -e MAIN=$(MAIN) assembler
 
 docker-test: docker-build
 	$(COMPOSE) --profile build run --rm \
@@ -71,7 +75,7 @@ list-games:
 	@ls -1 games
 
 clean:
-	rm -f games/*/*.prg $(SYMBOLS)
+	rm -f games/*/*.prg games/*/*.symbols
 	@echo "Pulizia completata."
 
 help:

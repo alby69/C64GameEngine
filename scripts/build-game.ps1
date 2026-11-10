@@ -29,11 +29,21 @@ Set-Location $ProjectRoot
 
 $GameFile = $Game -replace '-', '_'
 $target = "games/$Game/$GameFile.prg"
+$symbols = "games/$Game/$GameFile.symbols"
+
+# Convenzione: il file principale e' l'unico "*_main.asm" della cartella
+$mainFile = Get-ChildItem -Path "games/$Game" -Filter '*_main.asm' -File -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+if (-not $mainFile) {
+    Write-C64Fail "Nessun file '*_main.asm' trovato in games/$Game."
+    exit 1
+}
+$Main = $mainFile.Name
 
 function Invoke-DockerBuild {
     Write-C64Info "Compilazione di '$Game' dentro Docker (ACME)"
     $compose = Get-C64ComposeCommand
-    $args = @($compose) + @('--profile', 'build', 'run', '--rm', 'assembler')
+    $args = @($compose) + @('--profile', 'build', 'run', '--rm', '-e', "GAME=$Game", '-e', "MAIN=$Main", 'assembler')
     & $args[0] @($args[1..($args.Count - 1)])
     if ($LASTEXITCODE -ne 0) { throw "La compilazione Docker e' fallita." }
 }
@@ -46,7 +56,7 @@ if ($Docker -or -not (Get-Command acme -ErrorAction SilentlyContinue)) {
     Invoke-DockerBuild
 } else {
     Write-C64Info "Compilazione di '$Game' con ACME"
-    & acme -f cbm -o $target -l symbols.txt -I engine -I "games/$Game" "games/$Game/si_main.asm"
+    & acme -f cbm -o $target -l $symbols -I engine -I "games/$Game" "games/$Game/$Main"
     if ($LASTEXITCODE -ne 0) { throw "ACME ha restituito il codice $LASTEXITCODE." }
 }
 
@@ -55,7 +65,7 @@ Write-C64Ok "Compilato: $target"
 if ($Test) {
     if (Get-Command python -ErrorAction SilentlyContinue) {
         Write-C64Info 'Esecuzione dei test automatici'
-        & python tools/c64test.py $target symbols.txt
+        & python tools/c64test.py $target $symbols
         if ($LASTEXITCODE -ne 0) { throw "I test automatici sono falliti." }
     } else {
         Write-C64Warn 'python non trovato: test saltati.'

@@ -70,30 +70,60 @@ Dettagli e bug corretti: [`games/space-invaders/README.md`](games/space-invaders
 
 ## Compilare e testare il gioco
 
+### Il modo più semplice
+
 Non serve installare nulla: l'assembler **ACME** gira dentro Docker.
 
-```bash
-make docker-build     # compila -> games/space-invaders/space_invaders.prg
-make docker-test      # compila + emulatore 6502 di test
+```bat
+:: Windows
+scripts\build-game.bat              REM compila space-invaders
+scripts\build-game.bat -game hello  REM compila un altro gioco
+scripts\build-game.bat -test        REM compila + lancia i test automatici
 ```
 
-In alternativa, con ACME nel PATH:
-
 ```bash
-make            # compila
-make test       # compila e verifica
-make clean      # rimuove i file generati
+# Linux / macOS
+./scripts/build-game.sh
+./scripts/build-game.sh --game hello
+./scripts/build-game.sh --test
 ```
 
-Oppure direttamente:
+Il risultato è `games/<gioco>/<gioco>.prg`, pronto per VICE, CCS64,
+Micro64 o per un C64 vero.
 
-```bash
-docker compose --profile build run --rm assembler
+```bat
+:: Con make (Linux/macOS, oppure dentro WSL)
+make            REM compila space-invaders
+make game GAME=hello
+make test       REM compila + verifica
+make docker-build
 ```
 
-Il test automatico (`tools/c64test.py`, un emulatore 6502 incluso nel progetto)
-verifica titolo, avvio partita, HUD, movimento dello sciame, sparo,
-collisioni e punteggio.
+### Le quattro strade, dalla più semplice alla più esplicita
+
+| Comando | Cosa fa |
+|---|---|
+| `scripts\build-game.bat` | Sceglie da solo: ACME se è nel PATH, altrimenti Docker |
+| `make game GAME=<nome>` | Compila un gioco specifico con ACME |
+| `docker compose --profile build run --rm assembler` | Compila sempre dentro Docker |
+| `acme -f cbm -o out.prg -I engine -I games/x games/x/x_main.asm` | Comando ACME diretto |
+
+### Convention
+
+- Il gioco vive in `games/<nome>/`
+- Il file principale è **l'unico `*_main.asm`** della cartella (rilevato automaticamente)
+- Il `.prg` prende il nome del gioco con i trattini sostituiti da `_`
+  (`space-invaders` → `space_invaders.prg`)
+
+### Test automatico
+
+`tools/c64test.py` è un emulatore 6502 incluso nel progetto che esegue il
+`.prg` e ne verifica il comportamento (titolo, avvio partita, HUD, sparo,
+collisioni, punteggio):
+
+```bash
+make test           # oppure scripts\build-game.bat -test
+```
 
 ---
 
@@ -259,13 +289,16 @@ C64GameEngine/
 │   └── math.asm              # utility matematiche
 │
 ├── games/
-│   └── space-invaders/       # GIOCO DI ESEMPIO
-│       ├── si_main.asm       # entry point, game loop, collisioni
-│       ├── si_config.inc     # costanti e zero page del gioco
-│       ├── si_player.asm     # logica cannone e proiettile
-│       ├── si_invaders.asm   # logica sciame e bombe
-│       ├── si_hud.asm        # HUD, punteggio, vite
-│       └── si_sprites.asm    # dati grafici degli sprite
+│   ├── space-invaders/       # GIOCO DI ESEMPIO (completo)
+│   │   ├── si_main.asm       # entry point, game loop, collisioni
+│   │   ├── si_config.inc     # costanti e zero page del gioco
+│   │   ├── si_player.asm     # logica cannone e proiettile
+│   │   ├── si_invaders.asm   # logica sciame e bombe
+│   │   ├── si_hud.asm        # HUD, punteggio, vite
+│   │   └── si_sprites.asm    # dati grafici degli sprite
+│   └── hello/                # GIOCO MINIMALE (modello di partenza)
+│       ├── hello_main.asm    # 30 righe: video + testo dell'engine
+│       └── hello_config.inc  # costanti del gioco
 │
 ├── tools/
 │   └── c64test.py            # emulatore 6502 + test automatici

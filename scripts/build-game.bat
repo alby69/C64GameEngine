@@ -35,10 +35,18 @@ goto usage_error
 :args_done
 
 rem ---------------------------------------------------------------------------
-rem Nome del file .prg (il trattino diventa underscore)
+rem Nome del file .prg e del file principale del gioco
+rem Convenzione: il file principale e' l'unico "*_main.asm" della cartella
 rem ---------------------------------------------------------------------------
 set "GAME_FILE=%GAME:-=_%"
 set "TARGET=games\%GAME%\%GAME_FILE%.prg"
+set "SYMBOLS=games\%GAME%\%GAME_FILE%.symbols"
+set "MAIN="
+for %%f in ("games\%GAME%\*_main.asm") do if not defined MAIN set "MAIN=%%~nxf"
+if not defined MAIN (
+    echo [FAIL] Nessun file '*_main.asm' trovato in games\%GAME%.
+    exit /b 1
+)
 
 rem ---------------------------------------------------------------------------
 rem ACME nel PATH oppure Docker
@@ -77,14 +85,14 @@ if "%USE_DOCKER%"=="1" (
         exit /b 1
     )
     echo [INFO] Compilazione di '%GAME%' dentro Docker ^(ACME^)
-    !COMPOSE! -f "%CD%\docker-compose.yml" --profile build run --rm assembler
+    !COMPOSE! -f "%CD%\docker-compose.yml" --profile build run --rm -e GAME=%GAME% -e MAIN=!MAIN! assembler
     if errorlevel 1 (
         echo [FAIL] La compilazione Docker e' fallita.
         exit /b 1
     )
 ) else (
     echo [INFO] Compilazione di '%GAME%' con ACME
-    acme -f cbm -o "%TARGET%" -l symbols.txt -I engine -I "games\%GAME%" "games\%GAME%\si_main.asm"
+    acme -f cbm -o "%TARGET%" -l "%SYMBOLS%" -I engine -I "games\%GAME%" "games\%GAME%\!MAIN!"
     if errorlevel 1 (
         echo [FAIL] ACME ha restituito il codice di errore %ERRORLEVEL%.
         exit /b 1
@@ -103,7 +111,7 @@ if "%RUN_TEST%"=="1" (
         exit /b 0
     )
     echo [INFO] Esecuzione dei test automatici
-    python tools\c64test.py "%TARGET%" symbols.txt
+    python tools\c64test.py "%TARGET%" "%SYMBOLS%"
     if errorlevel 1 (
         echo [FAIL] I test automatici sono falliti.
         exit /b 1

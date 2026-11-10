@@ -15,6 +15,7 @@ docker_data/
 # Assembly: file generati dalla compilazione
 *.prg
 symbols.txt
+*.symbols
 
 # Python
 __pycache__/
