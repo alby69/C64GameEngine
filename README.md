@@ -68,6 +68,80 @@ Dettagli e bug corretti: [`games/space-invaders/README.md`](games/space-invaders
 
 ---
 
+## Provare il gioco
+
+Il gioco è un normale **file `.prg` del Commodore 64**: caricandolo in un
+emulatore si avvia con il comando BASIC `10 SYS 2064`.
+
+| File | Descrizione |
+|---|---|
+| `games/space-invaders/space_invaders.prg` | Il gioco compilato (6850 byte, caricato a `$0801`) |
+
+### 1. Con VICE (l'emulatore di riferimento)
+
+Installa VICE:
+
+```bash
+# Debian / Ubuntu
+sudo apt install vice
+# Fedora
+sudo dnf install vice
+# Arch
+sudo pacman -S vice
+# macOS
+brew install vice
+```
+
+Su Windows scarica l'installer da <https://vice-emu.org/download.html>.
+
+Poi lancia il gioco con lo script, che compila se necessario e apre VICE:
+
+```bat
+:: Windows
+scripts\run-game.bat
+scripts\run-game.bat -game hello
+```
+```bash
+# Linux / macOS
+./scripts/run-game.sh
+./scripts/run-game.sh --game hello
+```
+
+Oppure manualmente:
+
+```bash
+x64sc games/space-invaders/space_invaders.prg
+```
+
+### 2. Senza installare nulla
+
+Il `.prg` si può aprire con qualsiasi emulatore C64:
+
+- **RetroArch** (core `vice`) — installa il core e avvia il file
+- **CCS64**, **Micro64**, **C64 Web** (browser)
+- emulatori online come <https://c64online.com> (carica il `.prg`)
+
+In pratica: apri l'emulatore e trascina dentro `space_invaders.prg`.
+
+### 3. Su un Commodore 64 vero
+
+Il `.prg` gira su SD2IEC, Ultimate64, Kung Fu Flash, TheC64, EmuC64:
+
+```basic
+LOAD "SPACE_INVADERS.PRG",8,1
+RUN
+```
+
+### Comandi di gioco
+
+| Comando | Azione |
+|---|---|
+| Joystick porta 2 (sinistra/destra) | Muovere il cannone |
+| Tasto `A` / `D` | Muovere il cannone (tastiera) |
+| Tasto Fuoco / `SPAZIO` | Sparare |
+
+---
+
 ## Compilare e testare il gioco
 
 ### Il modo più semplice
