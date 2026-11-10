@@ -1,1 +1,92 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --c64-blue: #3c347e;
+    --c64-light-blue: #6c5eb2;
+    --c64-dark: #1a1a2e;
+    --c64-green: #50fa7b;
+    --c64-cyan: #8be9fd;
+    --c64-yellow: #f1fa8c;
+    --c64-red: #ff5555;
+    --c64-orange: #ffb86c;
+    --c64-purple: #bd93f9;
+    --c64-pink: #ff79c6;
+  }
+
+  body {
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 50%, #0d0d1a 100%);
+    color: #e0e0e0;
+    min-height: 100vh;
+  }
+
+  .c64-border {
+    border: 2px solid var(--c64-light-blue);
+    box-shadow: 0 0 10px rgba(108, 94, 178, 0.3);
+  }
+
+  .c64-glow {
+    text-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+  }
+
+  .code-block {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow-x: auto;
+  }
+
+  .module-card {
+    background: linear-gradient(145deg, #1e1e3f 0%, #16162e 100%);
+    border: 1px solid rgba(108, 94, 178, 0.4);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .module-card:hover {
+    border-color: var(--c64-cyan);
+    box-shadow: 0 0 20px rgba(139, 233, 253, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .scanline {
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.05) 2px,
+      rgba(0, 0, 0, 0.05) 4px
+    );
+  }
+
+  .tab-active {
+    background: linear-gradient(180deg, #3c347e 0%, #2a2460 100%);
+    border-bottom: 2px solid var(--c64-cyan);
+  }
+
+  .tree-line {
+    border-left: 1px dashed rgba(108, 94, 178, 0.5);
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .blink {
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(80, 250, 123, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(80, 250, 123, 0.6); }
+  }
+
+  .pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+}
