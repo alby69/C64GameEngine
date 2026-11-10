@@ -1,0 +1,16 @@
+# I file .bat devono restare con fine riga CRLF: cmd.exe li misparse con LF
+*.bat text eol=crlf
+
+# Gli script shell e i sorgenti Assembly usano LF
+*.sh   text eol=lf
+*.asm  text eol=lf
+*.inc  text eol=lf
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.py   text eol=lf
+*.yml  text eol=lf
+*.css  text eol=lf
+*.html text eol=lf

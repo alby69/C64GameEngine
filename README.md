@@ -124,6 +124,22 @@ docker --version
 docker compose version
 ```
 
+### Windows (batch)
+
+```bat
+:: Avvia lo stack di produzione (nginx) -> http://localhost:3000
+scripts\start.bat
+
+:: Avvia lo stack di sviluppo con hot reload -> http://localhost:3001
+scripts\start.bat -dev
+
+:: Arresta tutto
+scripts\stop.bat
+```
+
+Dal root del progetto si possono usare i wrapper `start.bat`, `stop.bat`,
+`logs.bat` e `build-game.bat`.
+
 ### Windows (PowerShell)
 
 ```powershell
@@ -161,18 +177,20 @@ In alternativa, dal root del progetto: `./start.sh` / `./start.sh --dev` / `./st
 
 ## Script di gestione
 
-| Azione | Windows | Linux |
-|---|---|---|
-| Avvio produzione | `scripts\start.ps1` | `scripts/start.sh` |
-| Avvio sviluppo | `scripts\start.ps1 -Dev` | `scripts/start.sh --dev` |
-| Avvio senza rebuild | `scripts\start.ps1 -NoBuild` | `scripts/start.sh --no-build` |
-| Avvio in foreground (log) | `scripts\start.ps1 -Foreground` | `scripts/start.sh --foreground` |
-| Arresto completo | `scripts\stop.ps1` | `scripts/stop.sh` |
-| Arresto solo dev | `scripts\stop.ps1 -Dev` | `scripts/stop.sh --dev` |
-| Arresto + immagini | `scripts\stop.ps1 -Images` | `scripts/stop.sh --images` |
-| Arresto + volumi | `scripts\stop.ps1 -Volumes` | `scripts/stop.sh --volumes` |
-| Log in tempo reale | `scripts\logs.ps1 [-Dev]` | `scripts/logs.sh [--dev]` |
-| Stato dei container | `docker compose ps` | `docker compose ps` |
+| Azione | Windows (batch) | Windows (PowerShell) | Linux / macOS |
+|---|---|---|---|
+| Avvio produzione | `scripts\start.bat` | `scripts\start.ps1` | `scripts/start.sh` |
+| Avvio sviluppo | `scripts\start.bat -dev` | `scripts\start.ps1 -Dev` | `scripts/start.sh --dev` |
+| Avvio senza rebuild | `scripts\start.bat -nobuild` | `scripts\start.ps1 -NoBuild` | `scripts/start.sh --no-build` |
+| Avvio in foreground (log) | `scripts\start.bat -foreground` | `scripts\start.ps1 -Foreground` | `scripts/start.sh --foreground` |
+| Arresto completo | `scripts\stop.bat` | `scripts\stop.ps1` | `scripts/stop.sh` |
+| Arresto solo dev | `scripts\stop.bat -dev` | `scripts\stop.ps1 -Dev` | `scripts/stop.sh --dev` |
+| Arresto + immagini | `scripts\stop.bat -images` | `scripts\stop.ps1 -Images` | `scripts/stop.sh --images` |
+| Arresto + volumi | `scripts\stop.bat -volumes` | `scripts\stop.ps1 -Volumes` | `scripts/stop.sh --volumes` |
+| Log in tempo reale | `scripts\logs.bat [-dev]` | `scripts\logs.ps1 [-Dev]` | `scripts/logs.sh [--dev]` |
+| Compila il gioco | `scripts\build-game.bat` | `scripts\build-game.ps1` | `scripts/build-game.sh` |
+| Compila + test | `scripts\build-game.bat -test` | `scripts\build-game.ps1 -Test` | `scripts/build-game.sh --test` |
+| Stato dei container | `docker compose ps` | `docker compose ps` | `docker compose ps` |
 
 ### Comandi Docker manuali equivalenti
 
@@ -268,12 +286,14 @@ C64GameEngine/
 │   └── nginx/default.conf    # nginx: SPA fallback, gzip, cache, healthcheck
 ├── scripts/
 │   ├── common.sh / common.ps1   # helper condivisi
-│   ├── start.sh / start.ps1     # avvio web app
-│   ├── stop.sh  / stop.ps1      # arresto web app
-│   ├── logs.sh  / logs.ps1      # log
-│   └── build-game.sh / .ps1     # compilazione del gioco
-├── start.sh / start.ps1      # wrapper comodi dal root
-├── stop.sh  / stop.ps1
+│   ├── start.sh / .ps1 / .bat   # avvio web app
+│   ├── stop.sh  / .ps1 / .bat   # arresto web app
+│   ├── logs.sh  / .ps1 / .bat   # log
+│   └── build-game.sh / .ps1 / .bat  # compilazione del gioco
+├── start.sh / .ps1 / .bat      # wrapper comodi dal root
+├── stop.sh  / .ps1 / .bat
+├── logs.sh  / .ps1 / .bat
+├── build-game.sh / .ps1 / .bat
 ├── src/
 │   ├── App.tsx               # interfaccia: mostra il codice reale dei sorgenti
 │   ├── main.tsx              # bootstrap React
