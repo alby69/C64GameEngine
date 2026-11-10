@@ -136,9 +136,14 @@ RUN
 
 | Comando | Azione |
 |---|---|
-| Joystick porta 2 (sinistra/destra) | Muovere il cannone |
-| Tasto `A` / `D` | Muovere il cannone (tastiera) |
-| Tasto Fuoco / `SPAZIO` | Sparare |
+| Joystick (porta 1 **o** porta 2) sinistra/destra | Muovere il cannone |
+| Tasti `A` / `D` | Muovere il cannone (tastiera) |
+| Tasto Fuoco (joystick) | Sparare |
+| Barra spaziatrice | Sparare **e avviare la partita** |
+
+> Alla schermata iniziale il gioco aspetta: premi **Fuoco** o **SPAZIO** per
+> iniziare. In VICE ricorda di cliccare dentro la finestra dell'emulatore
+> perché la tastiera va all'emulatore solo se ha il focus.
 
 ---
 

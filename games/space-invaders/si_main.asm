@@ -129,9 +129,12 @@ si_new_game:
 ; Macchina a stati finiti: un frame di gioco.
 ; -----------------------------------------------------------------------------
 si_update:
-    ; Aggiorna una volta per frame lo stato dei comandi
-    lda #$01                ; Joystick sulla porta 2
-    jsr input_read_joy
+    ; Aggiorna una volta per frame lo stato dei comandi.
+    ; Il joystick viene letto su entrambe le porte e la tastiera viene
+    ; interrogata qui, cosi' i comandi valgono anche nelle schermate di
+    ; titolo e game over (dove si decide di iniziare la partita).
+    jsr input_read_joy_any
+    jsr input_read_kbd
 
     lda SI_STATE
     cmp #SI_STATE_TITLE
@@ -146,14 +149,12 @@ si_update:
 
 .si_upd_title:
     ; Si aspetta la pressione del fuoco per iniziare
-    lda #JOY_FIRE
-    jsr input_is_pressed
-    bne .si_upd_start
-    rts
-.si_upd_start:
+    jsr si_fire_pressed
+    beq .si_upd_title_end
     jsr si_new_game
     lda #SI_STATE_PLAYING
     sta SI_STATE
+.si_upd_title_end:
     rts
 
 .si_upd_playing:
@@ -175,14 +176,12 @@ si_update:
 .si_upd_gameover:
     jsr si_hud_show_game_over
     ; Si riparte con un nuovo colpo
-    lda #JOY_FIRE
-    jsr input_is_pressed
-    bne .si_upd_restart
-    rts
-.si_upd_restart:
+    jsr si_fire_pressed
+    beq .si_upd_gameover_end
     jsr si_new_game
     lda #SI_STATE_PLAYING
     sta SI_STATE
+.si_upd_gameover_end:
     rts
 
 .si_upd_nextwave:
@@ -190,6 +189,25 @@ si_update:
     jsr si_invaders_init
     lda #SI_STATE_PLAYING
     sta SI_STATE
+    rts
+
+; -----------------------------------------------------------------------------
+; si_fire_pressed
+; A = 1 se il tasto di fuoco e' premuto (joystick su una delle porte
+; oppure barra spaziatrice), A = 0 altrimenti.
+; -----------------------------------------------------------------------------
+si_fire_pressed:
+    lda #JOY_FIRE
+    jsr input_is_pressed
+    bne .si_fire_yes
+    lda INPUT_KEY
+    cmp #$20                ; SPAZIO
+    bne .si_fire_no
+.si_fire_yes:
+    lda #$01
+    rts
+.si_fire_no:
+    lda #$00
     rts
 
 ; -----------------------------------------------------------------------------

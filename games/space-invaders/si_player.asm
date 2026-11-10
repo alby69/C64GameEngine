@@ -66,7 +66,7 @@ si_player_update:
     lda #$00
     sta SI_DIR
 
-    ; --- Joystick (porta 2) ---
+    ; --- Joystick (porta 1 o 2, lo stato e' gia' stato letto) ---
     lda #JOY_LEFT
     jsr input_is_pressed
     beq .si_pl_chk_right
@@ -81,7 +81,9 @@ si_player_update:
 
 .si_pl_chk_keys:
     ; --- Tastiera: A e D muovono, SPAZIO spara ---
-    jsr input_read_kbd
+    ; La tastiera viene interrogata una volta per frame in si_update:
+    ; qui si controlla solo il tasto letto.
+    lda INPUT_KEY
     cmp #'A'
     beq .si_pl_key_left
     cmp #'D'
@@ -142,17 +144,10 @@ si_player_check_fire:
     lda SI_COOLDOWN
     bne .si_pl_no_fire
 
-    ; Joystick
-    lda #JOY_FIRE
-    jsr input_is_pressed
-    bne .si_pl_fire_ok
+    ; Joystick oppure barra spaziatrice
+    jsr si_fire_pressed
+    beq .si_pl_no_fire
 
-    ; Tastiera: SPAZIO
-    lda INPUT_KEY
-    cmp #$20
-    bne .si_pl_no_fire
-
-.si_pl_fire_ok:
     ; Un solo colpo alla volta (regola di Space Invaders)
     lda SI_BULLET_ON
     bne .si_pl_no_fire

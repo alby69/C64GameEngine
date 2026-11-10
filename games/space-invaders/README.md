@@ -86,6 +86,21 @@ Il codice originale **non compilava** con ACME 0.96:
 4. **Overflow nel calcolo `riga * 40`** — il prodotto non entra in 8 bit per le
    righe > 7: l'HUD finiva fuori schermo. Ora il calcolo è a 16 bit.
 
+## Bug corretti durante il collaudo
+
+5. **La tastiera non era letta fuori dal gioco** — `si_update` interrogava solo
+   il joystick, quindi la schermata di titolo diceva "PRESS FIRE OR SPACE TO
+   START" ma la barra spaziatrice non avviava nulla. Ora joystick e tastiera
+   vengono letti una volta per frame, in tutte le schermate.
+6. **Joystick solo in porta 2** — ora l'engine legge entrambe le porte
+   (`input_read_joy_any`).
+7. **Cross-talk fra joystick e tastiera** — è un limite hardware del C64: le
+   linee della porta 1 del joystick sono le stesse delle colonne della
+   tastiera. La nuova scansione della tastiera conta quante righe riportano
+   ogni colonna: una sola = tasto reale, più di una = pulsante del joystick, e
+   la colonna viene ignorata. In questo modo joystick e tastiera non si
+   confondono.
+
 ---
 
 ## Verifica automatica

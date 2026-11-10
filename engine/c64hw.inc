@@ -236,4 +236,7 @@ MATH_DIV      = $0337     ; Divisore temporaneo
 MATH_REM_L    = $0338     ; Resto della divisione (basso)
 MATH_REM_H    = $0339     ; Resto della divisione (alto)
 VIC_LINE      = $033A     ; Linea di raster usata per la sincronizzazione
+INPUT_JOY1    = $033B     ; Stato grezzo della porta 1 del joystick
+KBD_COUNT     = $033C     ; Contatore di righe per colonna della tastiera (8 byte)
+KBD_ROW       = $0344     ; Riga in cui la colonna e' stata vista (8 byte)
 

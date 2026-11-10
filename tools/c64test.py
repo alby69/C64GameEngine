@@ -35,6 +35,10 @@ class C64:
         self.raster = 0
         self.cycles = 0
         self.illegal = None
+        self.joystick = 0xFF
+        self.joystick1 = 0xFF           # joystick collegato in porta 1
+        self.kbd_key = None          # (riga, colonna) del tasto premuto
+        self.kbd_row_mask = 0xFF     # ultima riga pilotata sulla porta A
 
     # ---------------- memory ----------------
     def read(self, addr):
@@ -42,16 +46,25 @@ class C64:
         if addr == 0xD012:               # VIC raster: il pennello avanza a ogni lettura
             self.raster = (self.raster + 1) & 0xFF
             return self.raster
-        if addr == 0xDC00:               # joystick port 2 (no button pressed)
+        if addr == 0xDC00:               # joystick porta 2
             return self.joystick
-        if addr == 0xDC01:               # keyboard columns (no key pressed)
-            return 0xFF
+        if addr == 0xDC01:               # porte B: colonne tastiera + joystick 1
+            val = 0xFF
+            if self.kbd_key is not None:
+                row, col = self.kbd_key
+                # la riga selezionata e' quella con il bit a 0
+                if not (self.kbd_row_mask & (1 << row)):
+                    val &= ~(1 << col) & 0xFF
+            # i pin del joystick 1 condividono le linee delle colonne
+            return val & self.joystick1
         return self.mem[addr]
 
     def write(self, addr, val):
         addr &= MASK
         if addr == 0xD012:
             return
+        if addr == 0xDC00:               # la porta A guida le righe della tastiera
+            self.kbd_row_mask = val
         self.mem[addr] = val & 0xFF
 
     # ---------------- helpers ----------------
@@ -569,8 +582,9 @@ def main():
         print("FAIL: si_main_loop symbol not found")
         return 1
 
-    def run_frames(n, joystick=0xFF):
+    def run_frames(n, joystick=0xFF, key=None):
         c64.joystick = joystick
+        c64.kbd_key = key
         for _ in range(n):
             steps = 0
             while True:
@@ -599,6 +613,56 @@ def main():
     state = c64.mem[0x20]
     print("   stato di gioco:", state, "(1 = in gioco)")
     ok_start = state == 1
+
+    print("== 2b. avvio partita con la BARRA SPAZIATRICE ==")
+    # Tasto SPACE = riga 4, colonna 2 della matrice della tastiera
+    c64.mem[0x20] = 0                    # torna allo stato "titolo"
+    if not run_frames(3, key=(4, 2)):
+        return 1
+    state_kbd = c64.mem[0x20]
+    print("   stato di gioco:", state_kbd, "(1 = in gioco)")
+    ok_start_kbd = state_kbd == 1
+
+    print("== 2c. avvio partita con il joystick in PORTA 1 ==")
+    c64.mem[0x20] = 0
+    c64.joystick1 = 0xCF                 # FIRE premuto sulla porta 1
+    if not run_frames(3):
+        return 1
+    state_joy1 = c64.mem[0x20]
+    c64.joystick1 = 0xFF
+    print("   stato di gioco:", state_joy1, "(1 = in gioco)")
+    ok_start_joy1 = state_joy1 == 1
+
+    print("== 2d. muovimento con la tastiera (tasto A) ==")
+    x0 = c64.mem[0x22]
+    if not run_frames(10, key=(2, 0)):  # 'A' = riga 2, colonna 0
+        return 1
+    x1 = c64.mem[0x22]
+    print("   X del cannone: %d -> %d" % (x0, x1))
+    ok_keys = x1 < x0
+
+    print("== 2e. nessun falso comando quando si usa la tastiera ==")
+    # Con la tastiera premuta la porta 1 del joystick non viene letta:
+    # il cannone non deve scivolare da solo.
+    x0 = c64.mem[0x22]
+    c64.joystick1 = 0xDF      # falso "sinistra" che arriverebbe dalla porta 1
+    if not run_frames(10, key=(2, 2)):   # tasto 'D' premuto
+        return 1
+    c64.joystick1 = 0xFF
+    x1 = c64.mem[0x22]
+    print("   X del cannone: %d -> %d (il tasto D muove a destra)" % (x0, x1))
+    ok_no_cross = x1 > x0
+
+    print("== 2f. movimento col joystick collegato in PORTA 1 ==")
+    x0 = c64.mem[0x22]
+    c64.joystick1 = 0xDB       # porta 1: SINISTRA premuta (bit 2 = 0)
+    if not run_frames(10):
+        return 1
+    c64.joystick1 = 0xFF
+    x1 = c64.mem[0x22]
+    key = c64.mem[0x0320]
+    print("   X del cannone: %d -> %d, tasto rilevato: $%02X" % (x0, x1, key))
+    ok_joy1_move = x1 < x0 and key == 0
 
     print("== 3. HUD ==")
     score = decode_screen(screen_text(c64.mem, 1, 2, 4))
@@ -646,7 +710,9 @@ def main():
     print("== 8. nessun opcode illegale ==")
     print("   istruzioni eseguite:", c64.cycles)
 
-    ok = ok_title and ok_start and ok_hud and ok_move and ok_shoot and ok_score
+    ok = (ok_title and ok_start and ok_start_kbd and ok_start_joy1 and ok_keys
+          and ok_no_cross and ok_joy1_move and ok_hud and ok_move and ok_shoot
+          and ok_score)
     print()
     print("RISULTATO:", "TUTTI I TEST SUPERATI" if ok else "FALLITO")
     return 0 if ok else 1

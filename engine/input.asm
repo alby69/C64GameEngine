@@ -50,6 +50,8 @@ input_init:
     sta INPUT_PREV
     sta INPUT_KEY
     sta ZP_DELAY
+    lda #%00011111
+    sta INPUT_JOY1          ; nessun pulsante del joystick in porta 1
     rts
 
 ; -----------------------------------------------------------------------------
@@ -75,6 +77,58 @@ input_read_joy:
     and #%11111011          ; bit 2 = 0 -> porta in ingresso
     sta CIA1_CRA
     lda CIA1_PORT_A
+    sta INPUT_JOY
+    rts
+
+; -----------------------------------------------------------------------------
+; input_read_joy_any
+; Combina le due porte del joystick in un unico stato, cosi' il gioco
+; funziona con il joystick in porta 1 oppure in porta 2.
+;
+; ATTENZIONE (comportamento reale del C64): la porta 1 del joystick condivide
+; le linee con le COLONNE della tastiera. Premere un tasto (o un pulsante
+; del joystick in porta 1) fa leggere come premute entrambe le cose.
+; Per questo:
+;   - se e' premuto un tasto della tastiera, la porta 1 non e' affidabile e
+;     si usa solo la porta 2;
+;   - il bit di fuoco viene comunque combinato fra le due porte.
+; -----------------------------------------------------------------------------
+input_read_joy_any:
+    lda #$01                ; porta 2: linee dedicate
+    jsr input_read_joy
+    sta ZP_TMP
+
+    lda #$00                ; porta 1: linee condivise con la tastiera
+    jsr input_read_joy
+    sta INPUT_JOY1
+
+    ; Se e' premuto un tasto, la porta 1 racconterebbe falsi comandi
+    lda INPUT_KEY
+    bne .input_joy_any_port2
+
+    ; Direzioni: AND dei due stati (0 = premuto su almeno una porta)
+    lda ZP_TMP
+    and INPUT_JOY1
+    sta ZP_TMP2
+
+    ; Fuoco: AND dei due bit di fuoco
+    lda ZP_TMP
+    and #%00010000
+    sta ZP_TMP3
+    lda INPUT_JOY1
+    and #%00010000
+    and ZP_TMP3
+    sta ZP_TMP3
+
+    ; Stato finale
+    lda ZP_TMP2
+    and #%11101111
+    ora ZP_TMP3
+    sta INPUT_JOY
+    rts
+
+.input_joy_any_port2:
+    lda ZP_TMP
     sta INPUT_JOY
     rts
 
@@ -116,6 +170,13 @@ input_key_pressed:
 ; La matrice funziona cosi': la porta A (righe) viene pilotata in uscita,
 ; la porta B (colonne) resta in ingresso. Selezionando una riga a massa e
 ; leggendo le colonne, una colonna a massa significa "tasto premuto".
+;
+; ATTENZIONE (comportamento reale del C64): le linee della porta 1 del
+; joystick sono le stesse delle colonne della tastiera. Un pulsante del
+; joystick in porta 1 tiene una colonna a massa in TUTTE le righe, mentre un
+; tasto vero si vede in una sola riga. Per ogni colonna si conta quindi quante
+; righe la riportano: una sola = tasto reale, piu' di una = pulsante del
+; joystick, e la colonna viene ignorata.
 ; -----------------------------------------------------------------------------
 input_read_kbd:
     ; La porta A diventa output per pilotare le righe
@@ -128,6 +189,15 @@ input_read_kbd:
     and #%11111011
     sta CIA1_CRB
 
+    ; Azzera i contatori e le righe delle colonne
+    ldx #$07
+.inp_kbd_clear:
+    lda #$00
+    sta KBD_COUNT,x
+    sta KBD_ROW,x
+    dex
+    bpl .inp_kbd_clear
+
     ldx #$00
 .inp_kbd_row:
     lda inp_kbd_rowmask,x
@@ -139,20 +209,26 @@ input_read_kbd:
     ldy #$00
 .inp_kbd_bit:
     lsr
-    bcc .inp_kbd_next       ; nessun tasto in questa colonna
+    bcc .inp_kbd_next
 
-    ; Tasto trovato: indice = riga * 8 + colonna
-    sty ZP_TMP2             ; colonna
-    txa
-    asl
-    asl
-    asl                     ; riga * 8
+    ; Colonna Y rilevata nella riga X
+    ; (INC non ha il modo ,y: si usa l'aritmetica)
+    lda KBD_COUNT,y
     clc
-    adc ZP_TMP2
-    tay
-    lda inp_kbd_map,y
-    sta INPUT_KEY
-    jmp .inp_kbd_end
+    adc #$01
+    sta KBD_COUNT,y
+    cmp #$01
+    bne .inp_kbd_twice
+    txa                     ; STX non ha il modo ,y: si passa per A
+    sta KBD_ROW,y           ; prima volta: si ricorda la riga
+    jmp .inp_kbd_next
+
+.inp_kbd_twice:
+    cmp #$02
+    bne .inp_kbd_next
+    ; Seconda volta: e' il pulsante del joystick in porta 1
+    lda #$00
+    sta KBD_ROW,y
 
 .inp_kbd_next:
     iny
@@ -162,11 +238,32 @@ input_read_kbd:
     cpx #$08
     bne .inp_kbd_row
 
-    ; Nessun tasto premuto
+    ; Cerca l'unica colonna vista una sola volta: quello e' il tasto reale
     lda #$00
     sta INPUT_KEY
+    ldy #$00
+.inp_kbd_find:
+    lda KBD_COUNT,y
+    cmp #$01
+    bne .inp_kbd_next_key
+    sty ZP_TMP2             ; colonna
+    lda KBD_ROW,y
+    asl
+    asl
+    asl                     ; riga * 8
+    clc
+    adc ZP_TMP2
+    tay
+    lda inp_kbd_map,y
+    sta INPUT_KEY
+    jmp .inp_kbd_done
 
-.inp_kbd_end:
+.inp_kbd_next_key:
+    iny
+    cpy #$08
+    bne .inp_kbd_find
+
+.inp_kbd_done:
     ; Ripristina lo stato: nessuna riga selezionata, porta A in ingresso
     lda #$FF
     sta CIA1_PORT_A
