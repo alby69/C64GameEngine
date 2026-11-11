@@ -11,6 +11,7 @@ The test drives the game through its public behaviour:
   4. the program never crashes (no illegal opcode, no runaway loop)
 """
 import sys
+from typing import Optional, Tuple
 
 MASK = 0xFFFF
 
@@ -37,7 +38,7 @@ class C64:
         self.illegal = None
         self.joystick = 0xFF
         self.joystick1 = 0xFF           # joystick collegato in porta 1
-        self.kbd_key = None          # (riga, colonna) del tasto premuto
+        self.kbd_key: Optional[Tuple[int, int]] = None  # (riga, colonna) del tasto premuto
         self.kbd_row_mask = 0xFF     # ultima riga pilotata sulla porta A
 
     # ---------------- memory ----------------
