@@ -256,50 +256,49 @@ docker compose version
 
 ```bat
 :: Avvia lo stack di produzione (nginx) -> http://localhost:3000
-scripts\start.bat
+bin\windows\start.bat
 
 :: Avvia lo stack di sviluppo con hot reload -> http://localhost:3001
-scripts\start.bat -dev
+bin\windows\start.bat -dev
 
 :: Arresta tutto
-scripts\stop.bat
+bin\windows\stop.bat
 ```
 
-Dal root del progetto si possono usare i wrapper `start.bat`, `stop.bat`,
-`logs.bat` e `build-game.bat`.
+Dal root del progetto si possono usare i wrapper cross-platform `start.sh`,
+`stop.sh`, `run-game.sh` (Linux/macOS) oppure `start.bat`, `stop.bat`,
+`run-game.bat` (Windows).
 
 ### Windows (PowerShell)
 
 ```powershell
 # Avvia lo stack di produzione (nginx) -> http://localhost:3000
-powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1
+powershell -ExecutionPolicy Bypass -File .\bin\windows\start.bat
 
 # Avvia lo stack di sviluppo con hot reload -> http://localhost:3001
-powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1 -Dev
+powershell -ExecutionPolicy Bypass -File .\bin\windows\start.bat -Dev
 
 # Arresta tutto
-powershell -ExecutionPolicy Bypass -File .\scripts\stop.ps1
+powershell -ExecutionPolicy Bypass -File .\bin\windows\stop.bat
 ```
 
-In alternativa, dal root del progetto puoi usare i wrapper:
-`.\start.ps1` / `.\start.ps1 -Dev` / `.\stop.ps1`.
+In alternativa, dal root del progetto puoi usare i wrapper cross-platform:
+`.\start.sh` / `.\start.sh -Dev` / `.\stop.sh`.
 
 ### Linux / macOS (Bash)
 
 ```bash
-# Avvia lo stack di produzione (nginx) -> http://localhost:3000
-./scripts/start.sh
+# Avvia lo stack di produzione (nginx) -> http://localhost:8080
+./start.sh
 
 # Avvia lo stack di sviluppo con hot reload -> http://localhost:3001
-./scripts/start.sh --dev
+./start.sh --dev
 
 # Arresta tutto
-./scripts/stop.sh
+./stop.sh
 ```
 
-In alternativa, dal root del progetto: `./start.sh` / `./start.sh --dev` / `./stop.sh`.
-
-> Se `bash` non è eseguibile: `chmod +x scripts/*.sh start.sh stop.sh`
+In alternativa, dalla cartella `scripts/`: `./scripts/start.sh`, `./scripts/start.sh --dev`, `./scripts/stop.sh`.
 
 ---
 
@@ -307,14 +306,14 @@ In alternativa, dal root del progetto: `./start.sh` / `./start.sh --dev` / `./st
 
 | Azione | Windows (batch) | Windows (PowerShell) | Linux / macOS |
 |---|---|---|---|
-| Avvio produzione | `scripts\start.bat` | `scripts\start.ps1` | `scripts/start.sh` |
-| Avvio sviluppo | `scripts\start.bat -dev` | `scripts\start.ps1 -Dev` | `scripts/start.sh --dev` |
-| Avvio senza rebuild | `scripts\start.bat -nobuild` | `scripts\start.ps1 -NoBuild` | `scripts/start.sh --no-build` |
-| Avvio in foreground (log) | `scripts\start.bat -foreground` | `scripts\start.ps1 -Foreground` | `scripts/start.sh --foreground` |
-| Arresto completo | `scripts\stop.bat` | `scripts\stop.ps1` | `scripts/stop.sh` |
-| Arresto solo dev | `scripts\stop.bat -dev` | `scripts\stop.ps1 -Dev` | `scripts/stop.sh --dev` |
-| Arresto + immagini | `scripts\stop.bat -images` | `scripts\stop.ps1 -Images` | `scripts/stop.sh --images` |
-| Arresto + volumi | `scripts\stop.bat -volumes` | `scripts\stop.ps1 -Volumes` | `scripts/stop.sh --volumes` |
+| Avvio produzione | `bin\windows\start.bat` | `bin\windows\start.bat` | `./start.sh` |
+| Avvio sviluppo | `bin\windows\start.bat -dev` | `bin\windows\start.bat -Dev` | `./start.sh --dev` |
+| Avvio senza rebuild | `bin\windows\start.bat -nobuild` | `bin\windows\start.bat -NoBuild` | `./start.sh --no-build` |
+| Avvio in foreground (log) | `bin\windows\start.bat -foreground` | `bin\windows\start.bat -Foreground` | `./start.sh --foreground` |
+| Arresto completo | `bin\windows\stop.bat` | `bin\windows\stop.bat` | `./stop.sh` |
+| Arresto solo dev | `bin\windows\stop.bat -dev` | `bin\windows\stop.bat -Dev` | `./stop.sh --dev` |
+| Arresto + immagini | `bin\windows\stop.bat -images` | `bin\windows\stop.bat -Images` | `./stop.sh --images` |
+| Arresto + volumi | `bin\windows\stop.bat -volumes` | `bin\windows\stop.bat -Volumes` | `./stop.sh --volumes` |
 | Log in tempo reale | `scripts\logs.bat [-dev]` | `scripts\logs.ps1 [-Dev]` | `scripts/logs.sh [--dev]` |
 | Compila il gioco | `scripts\build-game.bat` | `scripts\build-game.ps1` | `scripts/build-game.sh` |
 | Compila + test | `scripts\build-game.bat -test` | `scripts\build-game.ps1 -Test` | `scripts/build-game.sh --test` |
@@ -417,11 +416,20 @@ C64GameEngine/
 │   └── nginx/default.conf    # nginx: SPA fallback, gzip, cache, healthcheck
 ├── scripts/
 │   ├── common.sh / common.ps1   # helper condivisi
-│   ├── start.sh / .ps1 / .bat   # avvio web app
-│   ├── stop.sh  / .ps1 / .bat   # arresto web app
+│   ├── start.sh / .ps1 / .bat   # avvio web app (Windows)
+│   ├── stop.sh  / .ps1 / .bat   # arresto web app (Windows)
 │   ├── logs.sh  / .ps1 / .bat   # log
 │   └── build-game.sh / .ps1 / .bat  # compilazione del gioco
-├── start.sh / .ps1 / .bat      # wrapper comodi dal root
+├── bin/
+│   ├── linux/          # script Linux / macOS
+│   │   ├── start.sh
+│   │   ├── stop.sh
+│   │   └── run-game.sh
+│   └── windows/        # script Windows (batch)
+│       ├── start.bat
+│       ├── stop.bat
+│       └── run-game.bat
+├── start.sh / .ps1 / .bat      # wrapper comodi dal root (cross-platform)
 ├── stop.sh  / .ps1 / .bat
 ├── logs.sh  / .ps1 / .bat
 ├── build-game.sh / .ps1 / .bat
