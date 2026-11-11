@@ -61,9 +61,19 @@ else
         ok "Compilato: ${TARGET}"
     else
         info "Compilazione di '${GAME}' con ACME"
-        acme -f cbm -o "${TARGET}" -l "${SYMBOLS}" \
-            -I engine -I "games/${GAME}" "games/${GAME}/${MAIN}"
-        ok "Compilato: ${TARGET}"
+        ACME_VERSION=$(acme --version 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+' || echo "0.0")
+        ACME_MAJOR=$(echo "$ACME_VERSION" | cut -d. -f1)
+        ACME_MINOR=$(echo "$ACME_VERSION" | cut -d. -f2)
+        if [ -z "$ACME_VERSION" ] || [ "$ACME_MAJOR" -lt 1 ] || { [ "$ACME_MAJOR" -eq 1 ] && [ "$ACME_MINOR" -lt 10 ]; }; then
+            warn "ACME versione vecchia (${ACME_VERSION:-unknown}): uso la compilazione dentro Docker."
+            require_docker
+            docker compose --profile build run --rm -e GAME="${GAME}" -e MAIN="${MAIN}" assembler
+            ok "Compilato: ${TARGET}"
+        else
+            acme -f cbm -o "${TARGET}" -l "${SYMBOLS}" \
+                -I engine -I "games/${GAME}" "games/${GAME}/${MAIN}"
+            ok "Compilato: ${TARGET}"
+        fi
     fi
 fi
 
